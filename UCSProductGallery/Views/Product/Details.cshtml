@@ -1,20 +1,31 @@
-@model UCSProductGallery.Models.Product
+@{
+    var product = ViewBag.Product as UCSProductGallery.Controllers.Product;
+}
 
-<div class="container mx-auto p-4">
-    <h1 class="text-2xl font-bold mb-4">@Model.Title</h1>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-            <img src="@Model.Thumbnail" alt="@Model.Title" class="w-full h-64 object-cover mb-4">
-            <div class="grid grid-cols-3 gap-2">
-                @foreach (var image in Model.Images)
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <title>@product.title</title>
+</head>
+<body class="bg-gray-100 p-6">
+    <div class="container mx-auto">
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <img src="@product.thumbnail" alt="@product.title" class="w-full h-64 object-cover mb-2">
+                @foreach (var image in product.images)
                 {
-                <img src="@image" alt="@Model.Title" class="w-full h-24 object-cover">
+                    <img src="@image" alt="@product.title" class="w-full h-64 object-cover mb-2">
                 }
             </div>
-        </div>
-        <div>
-            <p class="text-gray-600">@Model.Description</p>
-            <p class="text-lg font-bold">$@Model.Price</p>
+            <div>
+                <h1 class="text-2xl font-bold">@product.title</h1>
+                <p class="text-xl">@product.price kr</p>
+                <p>@product.description</p>
+            </div>
         </div>
     </div>
-</div>
+</body>
+</html>
