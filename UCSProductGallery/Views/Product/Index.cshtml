@@ -46,7 +46,7 @@
                     @foreach (var category in categories)
                     {
                         <label class="block">
-                            <input type="checkbox" class="mr-2 category-filter" data-category="@category"> @category
+                            <input type="checkbox" class="mr-2 category-filter" data-category="@category"> @(!string.IsNullOrEmpty(category) ? char.ToUpper(category[0]) + category.Substring(1) : category)
                         </label>
                     }
                 </div>
