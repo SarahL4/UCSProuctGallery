@@ -10,33 +10,77 @@
 </head>
 <body class="bg-gray-100 p-6">
     <div class="container mx-auto">
+        <div class="mb-4">
+            <a href="@Url.Action("Index", "Product")" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                返回列表
+            </a>
+        </div>
+
         @if (Model != null)
         {
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-6 rounded-lg shadow-md">
                 <div>
                     @if (!string.IsNullOrEmpty(Model.Thumbnail))
                     {
-                        <img src="@Model.Thumbnail" alt="@Model.Title" class="w-full h-64 object-cover mb-2">
+                        <img src="@Model.Thumbnail" alt="@Model.Title" class="w-full h-64 object-cover mb-2 rounded">
                     }
-                    @if (Model.ImageUrls != null)
+                    @if (Model.ImageUrls != null && Model.ImageUrls.Any())
                     {
-                        foreach (var image in Model.ImageUrls)
-                        {
-                            <img src="@image" alt="@Model.Title" class="w-full h-64 object-cover mb-2">
-                        }
+                        <div class="grid grid-cols-2 gap-2 mt-4">
+                            @foreach (var image in Model.ImageUrls)
+                            {
+                                <img src="@image" alt="@Model.Title" class="w-full h-32 object-cover rounded">
+                            }
+                        </div>
+                    }
+                    else if (Model.Images != null && Model.Images.Any())
+                    {
+                        <div class="grid grid-cols-2 gap-2 mt-4">
+                            @foreach (var image in Model.Images)
+                            {
+                                @if (!string.IsNullOrEmpty(image.ImageUrl))
+                                {
+                                    <img src="@image.ImageUrl" alt="@Model.Title" class="w-full h-32 object-cover rounded">
+                                }
+                            }
+                        </div>
                     }
                 </div>
                 <div>
-                    <h1 class="text-2xl font-bold">@Model.Title</h1>
-                    <p class="text-xl">@Model.Price kr</p>
-                    <p>@Model.Description</p>
-                    <p class="mt-4">Category: @Model.CategoryName</p>
+                    <h1 class="text-2xl font-bold mb-2">@Model.Title</h1>
+                    <div class="bg-gray-100 text-xl font-semibold px-4 py-2 rounded mb-4">@Model.Price kr</div>
+                    @if (!string.IsNullOrEmpty(Model.Description))
+                    {
+                        <div class="mb-4">
+                            <h2 class="text-lg font-semibold mb-1">描述</h2>
+                            <p class="text-gray-700">@Model.Description</p>
+                        </div>
+                    }
+                    <div class="mb-4">
+                        <h2 class="text-lg font-semibold mb-1">类别</h2>
+                        <p class="text-gray-700">
+                            @if (!string.IsNullOrEmpty(Model.CategoryName))
+                            {
+                                @Model.CategoryName
+                            }
+                            else if (Model.Category != null && !string.IsNullOrEmpty(Model.Category.Name))
+                            {
+                                @Model.Category.Name
+                            }
+                            else
+                            {
+                                <span>未分类</span>
+                            }
+                        </p>
+                    </div>
                 </div>
             </div>
         }
         else
         {
-            <p>Product not found.</p>
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                <p>未找到产品信息。</p>
+            </div>
         }
     </div>
 </body>

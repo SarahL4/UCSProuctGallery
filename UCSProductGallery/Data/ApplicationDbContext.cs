@@ -1,5 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using UCSProductGallery.Models;
+using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Linq;
 
 namespace UCSProductGallery.Data
 {

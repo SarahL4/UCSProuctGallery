@@ -23,8 +23,11 @@ namespace UCSProductGallery.Models
         [JsonPropertyName("category")]
         public string? CategoryName { get; set; }
 
+        [JsonIgnore]
         [ForeignKey("Category")]
         public int? CategoryId { get; set; }
+
+        [JsonIgnore]
         public virtual Category? Category { get; set; }
 
         [JsonPropertyName("thumbnail")]
@@ -34,6 +37,7 @@ namespace UCSProductGallery.Models
         [NotMapped]
         public List<string>? ImageUrls { get; set; }
 
+        [JsonIgnore]
         public virtual ICollection<ProductImage>? Images { get; set; }
     }
 

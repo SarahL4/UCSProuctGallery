@@ -14,6 +14,8 @@ builder.Services.AddControllersWithViews()
 builder.Services.AddHttpClient<ProductApiClient>(); // Register ProductApiClient
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddScoped<ProductSyncService>(); // 注册产品同步服务
+builder.Services.AddTransient<IProductService, ProductApiClient>(); // 注册产品服务接口    
 
 var app = builder.Build();
 

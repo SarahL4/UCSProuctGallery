@@ -11,7 +11,7 @@ using UCSProductGallery.Data;
 namespace UCSProductGallery.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250319091530_InitialCreate")]
+    [Migration("20250319103107_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
