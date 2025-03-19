@@ -7,48 +7,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <title>@(Model?.Title ?? "Product Details")</title>
-    <style>
-        @@media (max-width: 768px) {
-            .product-container {
-                display: flex;
-                flex-direction: column;
-            }
-            .product-info {
-                order: 1;
-            }
-            .product-gallery {
-                order: 2;
-                margin-top: 2rem;
-            }
-        }
-        
-        .product-images {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 0.75rem;
-            margin-top: 0.75rem;
-        }
-        
-        @@media (min-width: 640px) {
-            .product-images {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-        
-       @@media (min-width: 1024px) {
-            .product-images {
-                grid-template-columns: repeat(3, 1fr);
-            }
-        }
-
-        .thumbnail-image {
-            width: 100%;
-            height: 300px;
-            object-fit: cover;
-            border-radius: 0.25rem;
-            margin-bottom: 0.75rem;
-        }
-    </style>
 </head>
 <body class="bg-gray-100 p-6">
     <div class="container mx-auto">
@@ -60,26 +18,37 @@
 
         @if (Model != null)
         {
-            <div class="product-container grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-6 rounded-lg shadow-md">
-                <div class="product-gallery">
+            <div class="flex flex-col md:flex-row bg-white p-6 rounded-lg shadow-md">
+                <div>
                     @if (!string.IsNullOrEmpty(Model.Thumbnail))
                     {
-                        <img src="@Model.Thumbnail" alt="@Model.Title" class="thumbnail-image">
+                        <img src="@Model.Thumbnail" alt="@Model.Title" class="w-full h-64 object-contain rounded mb-3">
                     }
-                    @if (Model.ImageUrls != null && Model.ImageUrls.Any())
+                    
+                    @if (Model.ImageUrls != null && Model.ImageUrls.Count() == 2 && Model.ImageUrls.First() != Model.Thumbnail)
                     {
-                        <div class="product-images">
-                            @foreach (var image in Model.ImageUrls)
-                            {
-                                @if (Model.Thumbnail != image)
+                        <div class="grid grid-cols-3 gap-3">
+                            <div class="col-span-1"></div>
+                            <div class="col-span-1">
+                                <img src="@Model.ImageUrls.First()" alt="@Model.Title" class="w-full h-64 object-contain rounded mb-3">
+                            </div>
+                            <div class="col-span-1"></div>
+                        </div>
+                    }else if (Model.ImageUrls != null && Model.ImageUrls.Count() > 2 && Model.ImageUrls.Any(img => img != Model.Thumbnail))
+                    { 
+                        <div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                           
+                                @foreach (var image in Model.ImageUrls)
                                 {
-                                    <img src="@image" alt="@Model.Title" class="thumbnail-image">
+                                    @if (Model.Thumbnail != image)
+                                    {
+                                        <img src="@image" alt="@Model.Title" class="w-full h-64 object-contain rounded mb-3">
+                                    }
                                 }
-                            }
                         </div>
                     }
                 </div>
-                <div class="product-info">
+                <div>
                     <h1 class="text-2xl font-bold mb-2">@Model.Title</h1>
                     <div class="bg-gray-100 text-xl font-semibold px-4 py-2 rounded mb-4">@Model.Price kr</div>
                     @if (!string.IsNullOrEmpty(Model.Description))
@@ -89,23 +58,6 @@
                             <p class="text-gray-700">@Model.Description</p>
                         </div>
                     }
-                    <div class="mb-4">
-                        <h2 class="text-lg font-semibold mb-1">Category</h2>
-                        <p class="text-gray-700">
-                            @if (!string.IsNullOrEmpty(Model.CategoryName))
-                            {
-                                @Model.CategoryName
-                            }
-                            else if (Model.Category != null && !string.IsNullOrEmpty(Model.Category.Name))
-                            {
-                                @Model.Category.Name
-                            }
-                            else
-                            {
-                                <span>No Category</span>
-                            }
-                        </p>
-                    </div>
                 </div>
             </div>
         }
