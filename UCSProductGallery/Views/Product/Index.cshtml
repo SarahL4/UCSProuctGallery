@@ -1,20 +1,20 @@
 @model IEnumerable<UCSProductGallery.Models.Product>
 
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <title>产品列表</title>
+    <title>Product List</title>
 </head>
 <body class="bg-gray-100 p-6">
     <div class="container mx-auto">
         <div class="flex justify-between items-center mb-4">
-            <h1 class="text-2xl font-bold">产品列表</h1>
+            <h1 class="text-2xl font-bold">Product Gallery</h1>
             <form asp-action="SyncProducts" method="post">
                 <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                    更新产品
+                    Update Products with API data
                 </button>
             </form>
         </div>
@@ -35,7 +35,7 @@
 
         <div class="flex flex-col md:flex-row">
             <div class="w-full md:w-1/4 bg-white p-4 rounded shadow mb-4 md:mb-0">
-                <h2 class="text-lg font-semibold mb-2">类别</h2>
+                <h2 class="text-lg font-semibold mb-2">Categories</h2>
                 <div>
                     @{
                         var categories = Model.Where(p => !string.IsNullOrEmpty(p.CategoryName))
@@ -71,7 +71,7 @@
                                 <p>@product.Price kr</p>
                                 <p class="text-sm text-gray-500">@product.CategoryName</p>
                                 <a href="@Url.Action("Details", "Product", new { id = product.Id })" class="inline-block mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                                    详情
+                                    Details
                                 </a>
                             </div>
                         }
@@ -79,7 +79,7 @@
                     else
                     {
                         <div class="col-span-3 p-4 bg-gray-50 rounded text-center">
-                            <p>没有找到产品。点击"更新产品"按钮从API获取产品数据。</p>
+                            <p>No products found. Click "Update Products" button to fetch products from the API.</p>
                         </div>
                     }
                 </div>
@@ -89,7 +89,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // 类别过滤功能
+            // Category filter functionality
             const categoryFilters = document.querySelectorAll('.category-filter');
             const productCards = document.querySelectorAll('.product-card');
 

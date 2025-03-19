@@ -30,13 +30,13 @@ namespace UCSProductGallery.Controllers
         {
             try
             {
-                // 先从数据库获取产品
+                // First get products from database
                 var dbProducts = await _context.Products
                     .Include(p => p.Category)
                     .Include(p => p.Images)
                     .ToListAsync();
 
-                // 如果数据库中没有产品，则从API获取并保存
+                // If no products in database, get from API and save
                 if (!dbProducts.Any())
                 {
                     await _syncService.SyncAllProductsAsync();
@@ -50,18 +50,18 @@ namespace UCSProductGallery.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "获取产品列表时出错");
-                TempData["Error"] = $"获取产品列表时出错: {ex.Message}";
+                _logger.LogError(ex, "Error occurred while retrieving product list");
+                TempData["Error"] = $"Error occurred while retrieving product list: {ex.Message}";
                 return View(new List<Product>());
             }
         }
 
         public async Task<IActionResult> Details(int id)
         {
-            // 添加日志以便调试
-            _logger.LogInformation($"尝试获取ID为{id}的产品");
+            // Add logs for debugging
+            _logger.LogInformation($"Attempting to retrieve product with ID {id}");
             
-            // 确保ID有效
+            // Make sure ID is valid
             if (id <= 0)
             {
                 return NotFound();
@@ -69,19 +69,19 @@ namespace UCSProductGallery.Controllers
             
             try
             {
-                // 先从数据库中获取产品
+                // First get product from database
                 var product = await _context.Products
                     .Include(p => p.Category)
                     .Include(p => p.Images)
                     .FirstOrDefaultAsync(p => p.Id == id);
 
-                // 如果数据库中没有找到，则从API获取并保存
+                // If not found in database, get from API and save
                 if (product == null)
                 {
-                    _logger.LogInformation($"数据库中未找到ID为{id}的产品，将从API获取");
+                    _logger.LogInformation($"Product with ID {id} not found in database, will fetch from API");
                     await _syncService.SyncProductByIdAsync(id);
                     
-                    // 再次尝试从数据库获取
+                    // Try to get from database again
                     product = await _context.Products
                         .Include(p => p.Category)
                         .Include(p => p.Images)
@@ -89,21 +89,21 @@ namespace UCSProductGallery.Controllers
                         
                     if (product == null)
                     {
-                        _logger.LogWarning($"未找到ID为{id}的产品");
+                        _logger.LogWarning($"Product with ID {id} not found");
                         return NotFound();
                     }
                 }
                 
-                // 准备视图数据
+                // Prepare view data
                 if (product.Images != null && product.Images.Any())
                 {
-                    // 如果ImageUrls为null，初始化它
+                    // If ImageUrls is null, initialize it
                     if (product.ImageUrls == null)
                     {
                         product.ImageUrls = new List<string>();
                     }
                     
-                    // 将数据库中的图片URL添加到ImageUrls中，供视图使用
+                    // Add image URLs from database to ImageUrls for view to use
                     foreach (var image in product.Images)
                     {
                         if (!string.IsNullOrEmpty(image.ImageUrl) && !product.ImageUrls.Contains(image.ImageUrl))
@@ -113,13 +113,13 @@ namespace UCSProductGallery.Controllers
                     }
                 }
 
-                _logger.LogInformation($"已找到产品: {product.Title}, 价格: {product.Price}, 类别: {product.CategoryName}");
+                _logger.LogInformation($"Product found: {product.Title}, Price: {product.Price}, Category: {product.CategoryName}");
                 return View(product);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"获取ID为{id}的产品详情时出错");
-                TempData["Error"] = $"获取产品详情时出错: {ex.Message}";
+                _logger.LogError(ex, $"Error occurred while retrieving product details for ID {id}");
+                TempData["Error"] = $"Error occurred while retrieving product details: {ex.Message}";
                 return View(new Product { Id = id });
             }
         }
@@ -129,15 +129,15 @@ namespace UCSProductGallery.Controllers
         {
             try
             {
-                _logger.LogInformation("开始同步所有产品数据");
+                _logger.LogInformation("Starting synchronization of all products");
                 await _syncService.SyncAllProductsAsync();
-                TempData["Message"] = "产品数据已成功同步";
+                TempData["Message"] = "Products successfully synchronized";
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "同步产品数据时出错");
-                TempData["Error"] = "同步产品数据时出错: " + ex.Message;
+                _logger.LogError(ex, "Error occurred while synchronizing products");
+                TempData["Error"] = "Error occurred while synchronizing products: " + ex.Message;
                 return RedirectToAction(nameof(Index));
             }
         }
@@ -146,15 +146,15 @@ namespace UCSProductGallery.Controllers
         {
             try
             {
-                _logger.LogInformation("开始获取并同步所有产品数据");
+                _logger.LogInformation("Starting fetch and synchronization of all products");
                 await _syncService.SyncAllProductsAsync();
-                TempData["Message"] = "产品数据已成功获取并保存";
+                TempData["Message"] = "Products successfully fetched and saved";
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "获取产品数据时出错");
-                TempData["Error"] = "获取产品数据时出错: " + ex.Message;
+                _logger.LogError(ex, "Error occurred while fetching products");
+                TempData["Error"] = "Error occurred while fetching products: " + ex.Message;
                 return RedirectToAction(nameof(Index));
             }
         }

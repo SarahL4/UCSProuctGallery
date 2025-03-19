@@ -24,17 +24,17 @@ namespace UCSProductGallery.Services
         {
             try 
             {
-                _logger.LogInformation("正在从API获取所有产品");
+                _logger.LogInformation("Fetching all products from API");
                 var response = await _httpClient.GetFromJsonAsync<ProductResponse>("https://dummyjson.com/products");
                 if (response?.Products != null)
                 {
-                    _logger.LogInformation($"成功获取到{response.Products.Count}个产品");
+                    _logger.LogInformation($"Successfully retrieved {response.Products.Count} products");
                 }
                 return response?.Products ?? new List<Product>();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "获取产品列表时出错");
+                _logger.LogError(ex, "Error occurred while retrieving product list");
                 return new List<Product>();
             }
         }
@@ -43,18 +43,18 @@ namespace UCSProductGallery.Services
         {
             try
             {
-                _logger.LogInformation($"正在从API获取ID为{id}的产品");
-                // dummyjson.com API单个产品不使用products数组，而是直接返回产品对象
+                _logger.LogInformation($"Fetching product with ID {id} from API");
+                // dummyjson.com API returns the product object directly, not in a products array
                 var product = await _httpClient.GetFromJsonAsync<Product>($"https://dummyjson.com/products/{id}");
                 if (product != null)
                 {
-                    _logger.LogInformation($"成功获取到产品: {product.Title}");
+                    _logger.LogInformation($"Successfully retrieved product: {product.Title}");
                 }
                 return product ?? new Product { Id = id };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"获取ID为{id}的产品时出错");
+                _logger.LogError(ex, $"Error occurred while retrieving product with ID {id}");
                 return new Product { Id = id };
             }
         }
