@@ -1,31 +1,43 @@
-@{
-    var product = ViewBag.Product as UCSProductGallery.Controllers.Product;
-}
+@model UCSProductGallery.Models.Product
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <title>@product.title</title>
+    <title>@(Model?.Title ?? "Product Details")</title>
 </head>
 <body class="bg-gray-100 p-6">
     <div class="container mx-auto">
-        <div class="grid grid-cols-2 gap-4">
-            <div>
-                <img src="@product.thumbnail" alt="@product.title" class="w-full h-64 object-cover mb-2">
-                @foreach (var image in product.images)
-                {
-                    <img src="@image" alt="@product.title" class="w-full h-64 object-cover mb-2">
-                }
+        @if (Model != null)
+        {
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    @if (!string.IsNullOrEmpty(Model.Thumbnail))
+                    {
+                        <img src="@Model.Thumbnail" alt="@Model.Title" class="w-full h-64 object-cover mb-2">
+                    }
+                    @if (Model.ImageUrls != null)
+                    {
+                        foreach (var image in Model.ImageUrls)
+                        {
+                            <img src="@image" alt="@Model.Title" class="w-full h-64 object-cover mb-2">
+                        }
+                    }
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold">@Model.Title</h1>
+                    <p class="text-xl">@Model.Price kr</p>
+                    <p>@Model.Description</p>
+                    <p class="mt-4">Category: @Model.CategoryName</p>
+                </div>
             </div>
-            <div>
-                <h1 class="text-2xl font-bold">@product.title</h1>
-                <p class="text-xl">@product.price kr</p>
-                <p>@product.description</p>
-            </div>
-        </div>
+        }
+        else
+        {
+            <p>Product not found.</p>
+        }
     </div>
 </body>
 </html>

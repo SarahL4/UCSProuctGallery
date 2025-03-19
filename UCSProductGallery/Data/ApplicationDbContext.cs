@@ -25,7 +25,8 @@ namespace UCSProductGallery.Data
             modelBuilder.Entity<Product>()
                 .HasOne(p => p.Category)
                 .WithMany(c => c.Products)
-                .HasForeignKey(p => p.CategoryId);
+                .HasForeignKey(p => p.CategoryId)
+                .IsRequired(false);
 
             modelBuilder.Entity<Product>()
                 .HasMany(p => p.Images)
