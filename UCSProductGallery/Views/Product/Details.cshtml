@@ -7,6 +7,48 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <title>@(Model?.Title ?? "Product Details")</title>
+    <style>
+        @@media (max-width: 768px) {
+            .product-container {
+                display: flex;
+                flex-direction: column;
+            }
+            .product-info {
+                order: 1;
+            }
+            .product-gallery {
+                order: 2;
+                margin-top: 2rem;
+            }
+        }
+        
+        .product-images {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+        }
+        
+        @@media (min-width: 640px) {
+            .product-images {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+       @@media (min-width: 1024px) {
+            .product-images {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .thumbnail-image {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 0.25rem;
+            margin-bottom: 0.75rem;
+        }
+    </style>
 </head>
 <body class="bg-gray-100 p-6">
     <div class="container mx-auto">
@@ -18,35 +60,26 @@
 
         @if (Model != null)
         {
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-6 rounded-lg shadow-md">
-                <div>
+            <div class="product-container grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-6 rounded-lg shadow-md">
+                <div class="product-gallery">
                     @if (!string.IsNullOrEmpty(Model.Thumbnail))
                     {
-                        <img src="@Model.Thumbnail" alt="@Model.Title" class="w-full h-64 object-cover mb-2 rounded">
+                        <img src="@Model.Thumbnail" alt="@Model.Title" class="thumbnail-image">
                     }
                     @if (Model.ImageUrls != null && Model.ImageUrls.Any())
                     {
-                        <div class="grid grid-cols-2 gap-2 mt-4">
+                        <div class="product-images">
                             @foreach (var image in Model.ImageUrls)
                             {
-                                <img src="@image" alt="@Model.Title" class="w-full h-32 object-cover rounded">
-                            }
-                        </div>
-                    }
-                    else if (Model.Images != null && Model.Images.Any())
-                    {
-                        <div class="grid grid-cols-2 gap-2 mt-4">
-                            @foreach (var image in Model.Images)
-                            {
-                                @if (!string.IsNullOrEmpty(image.ImageUrl))
+                                @if (Model.Thumbnail != image)
                                 {
-                                    <img src="@image.ImageUrl" alt="@Model.Title" class="w-full h-32 object-cover rounded">
+                                    <img src="@image" alt="@Model.Title" class="thumbnail-image">
                                 }
                             }
                         </div>
                     }
                 </div>
-                <div>
+                <div class="product-info">
                     <h1 class="text-2xl font-bold mb-2">@Model.Title</h1>
                     <div class="bg-gray-100 text-xl font-semibold px-4 py-2 rounded mb-4">@Model.Price kr</div>
                     @if (!string.IsNullOrEmpty(Model.Description))
