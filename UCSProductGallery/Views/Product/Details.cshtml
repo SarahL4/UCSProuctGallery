@@ -15,7 +15,7 @@
                 Back to List
             </a>
             
-            @if (Model?.Id > 0 && (TempData["Error"] != null && TempData["Error"].ToString().Contains("database")))
+            @if (Model?.Id > 0 && (TempData["Error"] != null && TempData["Error"]?.ToString()?.Contains("database") == true))
             {
                 <form asp-action="FetchProductFromApi" asp-route-id="@Model.Id" method="post">
                     <button type="submit" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
@@ -63,7 +63,7 @@
                         <div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3">
                             @foreach (var image in Model.ImageUrls)
                             {
-                                @if (Model.Thumbnail != image)
+                                if (Model.Thumbnail != image)
                                 {
                                     <img src="@image" alt="@Model.Title" class="w-full h-64 object-contain rounded mb-3">
                                 }
@@ -101,7 +101,7 @@
                 <p>No product information found. The product may not exist or there was an error retrieving it.</p>
             </div>
             
-            @if (Model?.Id > 0 && (TempData["Error"] != null && TempData["Error"].ToString().Contains("database")))
+            @if (Model?.Id > 0 && TempData["Error"] != null && TempData["Error"]?.ToString()?.Contains("database") == true)
             {
                 <div class="mt-4 text-center">
                     <form asp-action="FetchProductFromApi" asp-route-id="@Model.Id" method="post">
