@@ -22,7 +22,7 @@ namespace UCSProductGallery.Services
 
         public async Task<List<Product>> GetProductsAsync()
         {
-            try 
+            try
             {
                 _logger.LogInformation("Fetching all products from API");
                 var response = await _httpClient.GetFromJsonAsync<ProductResponse>("https://dummyjson.com/products");

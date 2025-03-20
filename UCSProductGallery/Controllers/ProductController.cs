@@ -32,7 +32,7 @@ namespace UCSProductGallery.Controllers
             {
                 // Check if we are coming from SyncProducts action (after button click)
                 bool isAfterSync = TempData["AfterSync"] != null && Convert.ToBoolean(TempData["AfterSync"]);
-                
+
                 // Try to get products from database first
                 try
                 {
@@ -58,7 +58,7 @@ namespace UCSProductGallery.Controllers
                 {
                     _logger.LogError(dbEx, "Database error when retrieving products: {0}", dbEx.Message);
                     ViewBag.DatabaseError = true;
-                    
+
                     // Only show initialLoad message if not coming from SyncProducts
                     if (!isAfterSync)
                     {
@@ -66,7 +66,7 @@ namespace UCSProductGallery.Controllers
                         return View(new List<Product>());
                     }
                 }
-                
+
                 // Either database is empty after sync or database error - get from API
                 if (isAfterSync)
                 {
@@ -82,7 +82,7 @@ namespace UCSProductGallery.Controllers
                         return View(new List<Product>());
                     }
                 }
-                
+
                 // Default fallback
                 return View(new List<Product>());
             }
@@ -98,19 +98,19 @@ namespace UCSProductGallery.Controllers
         {
             // Add logs for debugging
             _logger.LogInformation($"Attempting to retrieve product with ID {id}");
-            
+
             // Make sure ID is valid
             if (id <= 0)
             {
                 return NotFound();
             }
-            
+
             try
             {
                 // Check if we came from the index where API data was used
-                bool useApiDirectly = TempData["AfterSync"] != null && Convert.ToBoolean(TempData["AfterSync"]) 
+                bool useApiDirectly = TempData["AfterSync"] != null && Convert.ToBoolean(TempData["AfterSync"])
                                      && TempData["Error"] != null && TempData["Error"]?.ToString()?.Contains("database") == true;
-                
+
                 if (!useApiDirectly)
                 {
                     // Try to get product from database first
@@ -134,13 +134,13 @@ namespace UCSProductGallery.Controllers
                         // Continue to API retrieval
                     }
                 }
-                
+
                 // If useApiDirectly or database failed - try to get directly from API
                 try
                 {
                     _logger.LogInformation($"Getting product with ID {id} directly from API");
                     var apiProduct = await _productService.GetProductByIdAsync(id);
-                    
+
                     if (apiProduct != null)
                     {
                         // Try to enrich with category info if available without using database
@@ -177,7 +177,7 @@ namespace UCSProductGallery.Controllers
                 {
                     product.ImageUrls = new List<string>();
                 }
-                
+
                 // Add image URLs from database to ImageUrls for view to use
                 foreach (var image in product.Images)
                 {
@@ -195,7 +195,7 @@ namespace UCSProductGallery.Controllers
             try
             {
                 _logger.LogInformation("Starting synchronization of all products");
-                
+
                 try
                 {
                     // First try to save to database
@@ -205,7 +205,7 @@ namespace UCSProductGallery.Controllers
                 catch (Exception dbEx)
                 {
                     _logger.LogError(dbEx, "Error saving to database: {0}", dbEx.Message);
-                    
+
                     try
                     {
                         // Database error, get products directly from API
@@ -225,10 +225,10 @@ namespace UCSProductGallery.Controllers
                         TempData["Error"] = $"Unable to get data from API.";
                     }
                 }
-                
+
                 // Set flag to indicate we're coming from SyncProducts
                 TempData["AfterSync"] = true;
-                
+
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
@@ -251,7 +251,7 @@ namespace UCSProductGallery.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while fetching products");
-                TempData["Error"] = "Error occurred while fetching products." ;
+                TempData["Error"] = "Error occurred while fetching products.";
                 return RedirectToAction(nameof(Index));
             }
         }
@@ -262,14 +262,14 @@ namespace UCSProductGallery.Controllers
             try
             {
                 _logger.LogInformation($"Attempting to fetch product with ID {id} directly from API");
-                
+
                 // Get product from API
                 var apiProduct = await _productService.GetProductByIdAsync(id);
-                
+
                 if (apiProduct != null)
                 {
                     TempData["Message"] = "Product successfully retrieved from API";
-                    
+
                     // Try to save to database if possible
                     try
                     {
@@ -281,7 +281,7 @@ namespace UCSProductGallery.Controllers
                         _logger.LogWarning(dbEx, "Could not save product to database: {0}", dbEx.Message);
                         // Continue without database save
                     }
-                    
+
                     return RedirectToAction(nameof(Details), new { id = id });
                 }
                 else

@@ -136,7 +136,7 @@ namespace UCSProductGallery.Services
             var existingProducts = await _dbContext.Products
                 .Include(p => p.Images)
                 .ToListAsync();
-            
+
             var existingProductDict = existingProducts.ToDictionary(p => p.Title?.ToLower() ?? string.Empty, p => p);
 
             // Process each API product
@@ -145,7 +145,7 @@ namespace UCSProductGallery.Services
                 try
                 {
                     // Set category ID (foreign key)
-                    if (!string.IsNullOrEmpty(apiProduct.CategoryName) && 
+                    if (!string.IsNullOrEmpty(apiProduct.CategoryName) &&
                         categoryDict.ContainsKey(apiProduct.CategoryName))
                     {
                         apiProduct.CategoryId = categoryDict[apiProduct.CategoryName];
@@ -157,21 +157,21 @@ namespace UCSProductGallery.Services
                     // Check if product already exists (match by title)
                     string productTitle = apiProduct.Title?.ToLower() ?? string.Empty;
                     Product? dbProduct = null;
-                    
+
                     if (!string.IsNullOrEmpty(productTitle) && existingProductDict.ContainsKey(productTitle))
                     {
                         // Found existing product, update it
                         dbProduct = existingProductDict[productTitle];
-                        
+
                         // Don't update ID, keep database ID
                         int dbProductId = dbProduct.Id;
-                        
+
                         // Copy API product properties to database product
                         _dbContext.Entry(dbProduct).CurrentValues.SetValues(apiProduct);
-                        
+
                         // Restore database ID
                         dbProduct.Id = dbProductId;
-                        
+
                         _logger.LogInformation($"Updated existing product: {dbProduct.Title} (API ID: {apiProductId}, DB ID: {dbProductId})");
                     }
                     else
@@ -187,7 +187,7 @@ namespace UCSProductGallery.Services
                             Thumbnail = apiProduct.Thumbnail,
                             ImageUrls = apiProduct.ImageUrls
                         };
-                        
+
                         _dbContext.Products.Add(dbProduct);
                         _logger.LogInformation($"Added new product: {dbProduct.Title} (API ID: {apiProductId})");
                     }
@@ -248,7 +248,7 @@ namespace UCSProductGallery.Services
             }
 
             // If there is a thumbnail but not in ImageUrls, add it too
-            if (!string.IsNullOrEmpty(thumbnail) && 
+            if (!string.IsNullOrEmpty(thumbnail) &&
                 (imageUrls == null || !imageUrls.Contains(thumbnail)))
             {
                 newImages.Add(new ProductImage
@@ -267,4 +267,4 @@ namespace UCSProductGallery.Services
             }
         }
     }
-} 
+}

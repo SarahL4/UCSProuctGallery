@@ -7,4 +7,4 @@ namespace UCSProductGallery.Services
         Task<List<Product>> GetProductsAsync();
         Task<Product> GetProductByIdAsync(int id);
     }
-} 
+}
