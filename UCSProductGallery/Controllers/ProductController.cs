@@ -30,28 +30,52 @@ namespace UCSProductGallery.Controllers
         {
             try
             {
-                // First get products from database
-                var dbProducts = await _context.Products
-                    .Include(p => p.Category)
-                    .Include(p => p.Images)
-                    .ToListAsync();
-
-                // If no products in database, get from API and save
-                if (!dbProducts.Any())
+                // Check if we are coming from SyncProducts action (after button click)
+                bool isAfterSync = TempData["AfterSync"] != null && (bool)TempData["AfterSync"];
+                
+                if (!isAfterSync)
                 {
-                    await _syncService.SyncAllProductsAsync();
-                    dbProducts = await _context.Products
+                    // Initial page load - show empty products list with message
+                    ViewBag.InitialLoad = true;
+                    return View(new List<Product>());
+                }
+                
+                // After button click - try from database first
+                try
+                {
+                    var dbProducts = await _context.Products
                         .Include(p => p.Category)
                         .Include(p => p.Images)
                         .ToListAsync();
-                }
 
-                return View(dbProducts);
+                    if (dbProducts.Any())
+                    {
+                        return View(dbProducts);
+                    }
+                }
+                catch (Exception dbEx)
+                {
+                    _logger.LogError(dbEx, "Database error when retrieving products: {0}", dbEx.Message);
+                    // Continue to API retrieval
+                }
+                
+                // Either no products in database or database error - get from API
+                try
+                {
+                    var apiProducts = await _productService.GetProductsAsync();
+                    return View(apiProducts);
+                }
+                catch (Exception apiEx)
+                {
+                    _logger.LogError(apiEx, "Error getting products from API: {0}", apiEx.Message);
+                    TempData["Error"] = $"Failed to get data from API: {apiEx.Message}";
+                    return View(new List<Product>());
+                }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while retrieving product list");
-                TempData["Error"] = $"Error occurred while retrieving product list: {ex.Message}";
+                _logger.LogError(ex, "Unexpected error in Index action: {0}", ex.Message);
+                TempData["Error"] = $"An error occurred: {ex.Message}";
                 return View(new List<Product>());
             }
         }
@@ -130,13 +154,46 @@ namespace UCSProductGallery.Controllers
             try
             {
                 _logger.LogInformation("Starting synchronization of all products");
-                await _syncService.SyncAllProductsAsync();
-                TempData["Message"] = "Products successfully synchronized";
+                
+                try
+                {
+                    // First try to save to database
+                    await _syncService.SyncAllProductsAsync();
+                    TempData["Message"] = "Products successfully synchronized to database";
+                }
+                catch (Exception dbEx)
+                {
+                    _logger.LogError(dbEx, "Error saving to database: {0}", dbEx.Message);
+                    TempData["Error"] = $"Unable to save to database, will get data directly from API: {dbEx.Message}";
+                    
+                    try
+                    {
+                        // Database error, get products directly from API
+                        var apiProducts = await _productService.GetProductsAsync();
+                        if (apiProducts != null && apiProducts.Any())
+                        {
+                            TempData["Message"] = "Successfully retrieved data from API, but not saved to database";
+                        }
+                        else
+                        {
+                            TempData["Error"] = "API returned empty data";
+                        }
+                    }
+                    catch (Exception apiEx)
+                    {
+                        _logger.LogError(apiEx, "Error getting products from API: {0}", apiEx.Message);
+                        TempData["Error"] = $"Unable to get data from API: {apiEx.Message}";
+                    }
+                }
+                
+                // Set flag to indicate we're coming from SyncProducts
+                TempData["AfterSync"] = true;
+                
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while synchronizing products");
+                _logger.LogError(ex, "Error occurred while synchronizing products: {0}", ex.Message);
                 TempData["Error"] = "Error occurred while synchronizing products: " + ex.Message;
                 return RedirectToAction(nameof(Index));
             }
