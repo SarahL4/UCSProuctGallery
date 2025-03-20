@@ -31,7 +31,7 @@ namespace UCSProductGallery.Controllers
             try
             {
                 // Check if we are coming from SyncProducts action (after button click)
-                bool isAfterSync = TempData["AfterSync"] != null && (bool)TempData["AfterSync"];
+                bool isAfterSync = TempData["AfterSync"] != null && Convert.ToBoolean(TempData["AfterSync"]);
                 
                 // Try to get products from database first
                 try
@@ -108,8 +108,8 @@ namespace UCSProductGallery.Controllers
             try
             {
                 // Check if we came from the index where API data was used
-                bool useApiDirectly = TempData["AfterSync"] != null && (bool)TempData["AfterSync"] 
-                                     && TempData["Error"] != null && TempData["Error"].ToString().Contains("database");
+                bool useApiDirectly = TempData["AfterSync"] != null && Convert.ToBoolean(TempData["AfterSync"]) 
+                                     && TempData["Error"] != null && TempData["Error"]?.ToString()?.Contains("database") == true;
                 
                 if (!useApiDirectly)
                 {

@@ -130,7 +130,7 @@ namespace UCSProductGallery.Services
         {
             // Get all categories from the database (for subsequent foreign key mapping)
             var allCategories = await _dbContext.Categories.ToListAsync();
-            var categoryDict = allCategories.ToDictionary(c => c.Name, c => c.Id);
+            var categoryDict = allCategories.ToDictionary(c => c.Name ?? string.Empty, c => c.Id);
 
             // Get existing product list (match by title)
             var existingProducts = await _dbContext.Products
@@ -156,7 +156,7 @@ namespace UCSProductGallery.Services
 
                     // Check if product already exists (match by title)
                     string productTitle = apiProduct.Title?.ToLower() ?? string.Empty;
-                    Product dbProduct = null;
+                    Product? dbProduct = null;
                     
                     if (!string.IsNullOrEmpty(productTitle) && existingProductDict.ContainsKey(productTitle))
                     {
@@ -196,7 +196,7 @@ namespace UCSProductGallery.Services
                     await _dbContext.SaveChangesAsync();
 
                     // Synchronize product images (using database product ID)
-                    await SyncProductImagesAsync(dbProduct, apiProduct.ImageUrls, apiProduct.Thumbnail);
+                    await SyncProductImagesAsync(dbProduct, apiProduct.ImageUrls ?? new List<string>(), apiProduct.Thumbnail ?? string.Empty);
                 }
                 catch (Exception ex)
                 {
