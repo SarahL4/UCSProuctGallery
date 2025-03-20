@@ -12,11 +12,14 @@
     <div class="container mx-auto">
         <div class="flex justify-between items-center mb-4">
             <h1 class="text-2xl font-bold">Product Gallery</h1>
-            <form asp-action="SyncProducts" method="post">
-                <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                    Update Products with API data
-                </button>
-            </form>
+            @if ((ViewBag.InitialLoad != null && ViewBag.InitialLoad) || (ViewBag.DatabaseError != null && ViewBag.DatabaseError))
+            {
+                <form asp-action="SyncProducts" method="post">
+                    <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                        Update Products with API data
+                    </button>
+                </form>
+            }
         </div>
 
         @if (TempData["Message"] != null)
@@ -34,24 +37,27 @@
         }
 
         <div class="flex flex-col md:flex-row">
-            <div class="w-full md:w-1/4 bg-white p-4 rounded shadow mb-4 md:mb-0">
-                <h2 class="text-lg font-semibold mb-2">Categories</h2>
-                <div>
-                    @{
-                        var categories = Model.Where(p => !string.IsNullOrEmpty(p.CategoryName))
-                                              .Select(p => p.CategoryName)
-                                              .Distinct()
-                                              .OrderBy(c => c);
-                    }
-                    @foreach (var category in categories)
-                    {
-                        <label class="block">
-                            <input type="checkbox" class="mr-2 category-filter" data-category="@category"> @(!string.IsNullOrEmpty(category) ? char.ToUpper(category[0]) + category.Substring(1) : category)
-                        </label>
-                    }
+            @if (Model != null && Model.Any())
+            {
+                <div class="w-full md:w-1/4 bg-white p-4 rounded shadow mb-4 md:mb-0">
+                    <h2 class="text-lg font-semibold mb-2">Categories</h2>
+                    <div>
+                        @{
+                            var categories = Model.Where(p => !string.IsNullOrEmpty(p.CategoryName))
+                                                .Select(p => p.CategoryName)
+                                                .Distinct()
+                                                .OrderBy(c => c);
+                        }
+                        @foreach (var category in categories)
+                        {
+                            <label class="block">
+                                <input type="checkbox" class="mr-2 category-filter" data-category="@category"> @(!string.IsNullOrEmpty(category) ? char.ToUpper(category[0]) + category.Substring(1) : category)
+                            </label>
+                        }
+                    </div>
                 </div>
-            </div>
-            <div class="w-full md:w-3/4 md:ml-4">
+            }
+            <div class="@(Model != null && Model.Any() ? "w-full md:w-3/4 md:ml-4" : "w-full")">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     @if (Model != null && Model.Any())
                     {
@@ -60,12 +66,12 @@
                             <div class="bg-white p-4 rounded shadow product-card" data-category="@product.CategoryName">
                                 @if (!string.IsNullOrEmpty(product.Thumbnail))
                                 {
-                                    <img src="@product.Thumbnail" alt="@product.Title" class="w-full h-32 object-cover mb-2 rounded">
+                                    <img src="@product.Thumbnail" alt="@product.Title" class="w-full h-32 object-scale-down mb-2 rounded">
                                 }
                                 else if (product.Images != null && product.Images.Any())
                                 {
                                     var mainImage = product.Images.FirstOrDefault(i => i.IsMain) ?? product.Images.First();
-                                    <img src="@mainImage.ImageUrl" alt="@product.Title" class="w-full h-32 object-cover mb-2 rounded">
+                                    <img src="@mainImage.ImageUrl" alt="@product.Title" class="w-full h-32 object-scale-down mb-2 rounded">
                                 }
                                 <h3 class="font-semibold">@product.Title</h3>
                                 <p>@product.Price kr</p>
@@ -79,7 +85,14 @@
                     else
                     {
                         <div class="col-span-3 p-4 bg-gray-50 rounded text-center">
-                            <p>No products found. Click "Update Products" button to fetch products from the API.</p>
+                            @if (ViewBag.InitialLoad != null && ViewBag.InitialLoad)
+                            {
+                                <p>No products available form database. Click "Update Products with API data" button to fetch products from the API.</p>
+                            }
+                            else
+                            {
+                                <p>No products found. API call may have failed or returned empty data.</p>
+                            }
                         </div>
                     }
                 </div>

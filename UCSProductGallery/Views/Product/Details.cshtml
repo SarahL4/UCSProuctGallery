@@ -10,22 +10,45 @@
 </head>
 <body class="bg-gray-100 p-6">
     <div class="container mx-auto">
-        <div class="mb-4">
+        <div class="mb-4 flex justify-between items-center">
             <a href="@Url.Action("Index", "Product")" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
                 Back to List
             </a>
+            
+            @if (Model?.Id > 0 && (TempData["Error"] != null && TempData["Error"].ToString().Contains("database")))
+            {
+                <form asp-action="FetchProductFromApi" asp-route-id="@Model.Id" method="post">
+                    <button type="submit" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                        Fetch From API
+                    </button>
+                </form>
+            }
         </div>
 
-        @if (Model != null)
+        @if (TempData["Message"] != null)
+        {
+            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                @TempData["Message"]
+            </div>
+        }
+
+        @if (TempData["Error"] != null)
+        {
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                @TempData["Error"]
+            </div>
+        }
+
+        @if (Model != null && !string.IsNullOrEmpty(Model.Title))
         {
             <div class="flex flex-col md:flex-row bg-white p-6 rounded-lg shadow-md">
-                <div>
+                <div class="order-1 md:order-2 md:w-1/2">
                     @if (!string.IsNullOrEmpty(Model.Thumbnail))
                     {
-                        <img src="@Model.Thumbnail" alt="@Model.Title" class="w-full h-64 object-contain rounded mb-3">
+                        <img src="@Model.Thumbnail" alt="@Model.Title" class="w-full h-64 object-contain rounded">
                     }
                     
-                    @if (Model.ImageUrls != null && Model.ImageUrls.Count() == 2 && Model.ImageUrls.First() != Model.Thumbnail)
+                    @if (Model.ImageUrls != null && Model.ImageUrls.Any() && Model.ImageUrls.Count() == 1 && Model.ImageUrls.First() != Model.Thumbnail)
                     {
                         <div class="grid grid-cols-3 gap-3">
                             <div class="col-span-1"></div>
@@ -34,21 +57,21 @@
                             </div>
                             <div class="col-span-1"></div>
                         </div>
-                    }else if (Model.ImageUrls != null && Model.ImageUrls.Count() > 2 && Model.ImageUrls.Any(img => img != Model.Thumbnail))
+                    }
+                    else if (Model.ImageUrls != null && Model.ImageUrls.Any() && Model.ImageUrls.Count() > 1 && Model.ImageUrls.Any(img => img != Model.Thumbnail))
                     { 
                         <div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                           
-                                @foreach (var image in Model.ImageUrls)
+                            @foreach (var image in Model.ImageUrls)
+                            {
+                                @if (Model.Thumbnail != image)
                                 {
-                                    @if (Model.Thumbnail != image)
-                                    {
-                                        <img src="@image" alt="@Model.Title" class="w-full h-64 object-contain rounded mb-3">
-                                    }
+                                    <img src="@image" alt="@Model.Title" class="w-full h-64 object-contain rounded mb-3">
                                 }
+                            }
                         </div>
                     }
                 </div>
-                <div>
+                <div class="order-2 md:order-1 md:w-1/2 md:pl-4">
                     <h1 class="text-2xl font-bold mb-2">@Model.Title</h1>
                     <div class="bg-gray-100 text-xl font-semibold px-4 py-2 rounded mb-4">@Model.Price kr</div>
                     @if (!string.IsNullOrEmpty(Model.Description))
@@ -58,14 +81,36 @@
                             <p class="text-gray-700">@Model.Description</p>
                         </div>
                     }
+                    @if (!string.IsNullOrEmpty(Model.CategoryName))
+                    {
+                        <div class="mb-4">
+                            <h2 class="text-lg font-semibold mb-1">Category</h2>
+                            <p class="text-gray-700">@(!string.IsNullOrEmpty(Model.CategoryName) ? char.ToUpper(Model.CategoryName[0]) + Model.CategoryName.Substring(1) : "")</p>
+                        </div>
+                    }
+                    
+                    <div class="text-sm text-gray-500 mt-4">
+                        <p>Data source: @(Model.CategoryId > 0 ? "Database" : "API")</p>
+                    </div>
                 </div>
             </div>
         }
         else
         {
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-                <p>No product information found.</p>
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                <p>No product information found. The product may not exist or there was an error retrieving it.</p>
             </div>
+            
+            @if (Model?.Id > 0 && (TempData["Error"] != null && TempData["Error"].ToString().Contains("database")))
+            {
+                <div class="mt-4 text-center">
+                    <form asp-action="FetchProductFromApi" asp-route-id="@Model.Id" method="post">
+                        <button type="submit" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                            Try to Fetch Product from API
+                        </button>
+                    </form>
+                </div>
+            }
         }
     </div>
 </body>
