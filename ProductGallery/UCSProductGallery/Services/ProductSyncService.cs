@@ -1,9 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using UCSProductGallery.Data;
 using UCSProductGallery.Models;
 
@@ -20,9 +15,9 @@ namespace UCSProductGallery.Services
             ApplicationDbContext dbContext,
             ILogger<ProductSyncService> logger)
         {
-            _productService = productService;
-            _dbContext = dbContext;
-            _logger = logger;
+            _productService = productService ?? throw new ArgumentNullException(nameof(productService));
+            _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         /// <summary>
@@ -42,10 +37,8 @@ namespace UCSProductGallery.Services
 
                 _logger.LogInformation($"Retrieved {apiProducts.Count} products from API");
 
-                // Synchronize product categories
+                // Synchronize product categories and then products
                 await SyncCategoriesAsync(apiProducts);
-
-                // Synchronize product data
                 await SyncProductsAsync(apiProducts);
 
                 _logger.LogInformation("Product synchronization completed");
@@ -62,6 +55,11 @@ namespace UCSProductGallery.Services
         /// </summary>
         public async Task SyncProductByIdAsync(int id)
         {
+            if (id <= 0)
+            {
+                throw new ArgumentException("Product ID must be greater than zero", nameof(id));
+            }
+
             try
             {
                 // Get product from API
@@ -75,10 +73,8 @@ namespace UCSProductGallery.Services
                 // Add single product to the list to reuse synchronization logic
                 var apiProducts = new List<Product> { apiProduct };
 
-                // Synchronize product categories
+                // Synchronize product categories and then the product
                 await SyncCategoriesAsync(apiProducts);
-
-                // Synchronize product data
                 await SyncProductsAsync(apiProducts);
 
                 _logger.LogInformation($"Product {id} synchronization completed");
@@ -92,12 +88,18 @@ namespace UCSProductGallery.Services
 
         private async Task SyncCategoriesAsync(List<Product> apiProducts)
         {
-            // Get all unique category names from API products
+            // Get all unique non-empty category names from API products
             var categoryNames = apiProducts
                 .Where(p => !string.IsNullOrEmpty(p.CategoryName))
                 .Select(p => p.CategoryName)
                 .Distinct()
                 .ToList();
+
+            if (!categoryNames.Any())
+            {
+                _logger.LogInformation("No categories to synchronize");
+                return;
+            }
 
             // Get existing categories from database
             var existingCategories = await _dbContext.Categories
@@ -113,16 +115,14 @@ namespace UCSProductGallery.Services
             // Add new categories to database
             if (newCategoryNames.Any())
             {
-                foreach (var categoryName in newCategoryNames)
-                {
-                    var newCategory = new Category
-                    {
-                        Name = categoryName
-                    };
-                    _dbContext.Categories.Add(newCategory);
-                }
+                var newCategories = newCategoryNames.Select(name => new Category { Name = name });
+                await _dbContext.Categories.AddRangeAsync(newCategories);
                 await _dbContext.SaveChangesAsync();
                 _logger.LogInformation($"Added {newCategoryNames.Count} new categories");
+            }
+            else
+            {
+                _logger.LogInformation("All categories already exist in the database");
             }
         }
 
@@ -137,78 +137,93 @@ namespace UCSProductGallery.Services
                 .Include(p => p.Images)
                 .ToListAsync();
 
-            var existingProductDict = existingProducts.ToDictionary(p => p.Title?.ToLower() ?? string.Empty, p => p);
+            var existingProductDict = existingProducts
+                .Where(p => !string.IsNullOrEmpty(p.Title))
+                .ToDictionary(p => (p.Title ?? string.Empty).ToLower(), p => p);
 
             // Process each API product
             foreach (var apiProduct in apiProducts)
             {
-                try
+                await ProcessProductAsync(apiProduct, categoryDict, existingProductDict);
+            }
+        }
+
+        private async Task ProcessProductAsync(
+            Product apiProduct, 
+            Dictionary<string, int> categoryDict, 
+            Dictionary<string, Product> existingProductDict)
+        {
+            if (apiProduct == null)
+            {
+                _logger.LogWarning("Skipping null product");
+                return;
+            }
+
+            try
+            {
+                // Set category ID (foreign key)
+                if (!string.IsNullOrEmpty(apiProduct.CategoryName) &&
+                    categoryDict.ContainsKey(apiProduct.CategoryName))
                 {
-                    // Set category ID (foreign key)
-                    if (!string.IsNullOrEmpty(apiProduct.CategoryName) &&
-                        categoryDict.ContainsKey(apiProduct.CategoryName))
-                    {
-                        apiProduct.CategoryId = categoryDict[apiProduct.CategoryName];
-                    }
-
-                    // Save original API product ID for logging
-                    int apiProductId = apiProduct.Id;
-
-                    // Check if product already exists (match by title)
-                    string productTitle = apiProduct.Title?.ToLower() ?? string.Empty;
-                    Product? dbProduct = null;
-
-                    if (!string.IsNullOrEmpty(productTitle) && existingProductDict.ContainsKey(productTitle))
-                    {
-                        // Found existing product, update it
-                        dbProduct = existingProductDict[productTitle];
-
-                        // Don't update ID, keep database ID
-                        int dbProductId = dbProduct.Id;
-
-                        // Copy API product properties to database product
-                        _dbContext.Entry(dbProduct).CurrentValues.SetValues(apiProduct);
-
-                        // Restore database ID
-                        dbProduct.Id = dbProductId;
-
-                        _logger.LogInformation($"Updated existing product: {dbProduct.Title} (API ID: {apiProductId}, DB ID: {dbProductId})");
-                    }
-                    else
-                    {
-                        // New product, need to create a new instance and clear ID, let database generate
-                        dbProduct = new Product
-                        {
-                            Title = apiProduct.Title,
-                            Description = apiProduct.Description,
-                            Price = apiProduct.Price,
-                            CategoryId = apiProduct.CategoryId,
-                            CategoryName = apiProduct.CategoryName,
-                            Thumbnail = apiProduct.Thumbnail,
-                            ImageUrls = apiProduct.ImageUrls
-                        };
-
-                        _dbContext.Products.Add(dbProduct);
-                        _logger.LogInformation($"Added new product: {dbProduct.Title} (API ID: {apiProductId})");
-                    }
-
-                    // Save changes to get database-generated ID (if new product)
-                    await _dbContext.SaveChangesAsync();
-
-                    // Synchronize product images (using database product ID)
-                    await SyncProductImagesAsync(dbProduct, apiProduct.ImageUrls ?? new List<string>(), apiProduct.Thumbnail ?? string.Empty);
+                    apiProduct.CategoryId = categoryDict[apiProduct.CategoryName];
                 }
-                catch (Exception ex)
+
+                // Save original API product ID for logging
+                int apiProductId = apiProduct.Id;
+
+                // Check if product already exists (match by title)
+                Product? dbProduct = null;
+                string? productTitle = apiProduct.Title?.ToLower();
+                
+                if (!string.IsNullOrEmpty(productTitle) && existingProductDict.ContainsKey(productTitle))
                 {
-                    _logger.LogError(ex, $"Error occurred while synchronizing product {apiProduct.Id}");
-                    // Continue processing the next product
+                    // Update existing product
+                    dbProduct = existingProductDict[productTitle];
+                    int dbProductId = dbProduct.Id;
+
+                    // Copy API product properties to database product
+                    _dbContext.Entry(dbProduct).CurrentValues.SetValues(apiProduct);
+                    dbProduct.Id = dbProductId; // Restore database ID
+
+                    _logger.LogInformation($"Updated existing product: {dbProduct.Title} (API ID: {apiProductId}, DB ID: {dbProductId})");
                 }
+                else
+                {
+                    // Create new product
+                    dbProduct = new Product
+                    {
+                        Title = apiProduct.Title ?? string.Empty,
+                        Description = apiProduct.Description ?? string.Empty,
+                        Price = apiProduct.Price,
+                        CategoryId = apiProduct.CategoryId,
+                        CategoryName = apiProduct.CategoryName ?? string.Empty,
+                        Thumbnail = apiProduct.Thumbnail ?? string.Empty,
+                        ImageUrls = apiProduct.ImageUrls ?? new List<string>()
+                    };
+
+                    await _dbContext.Products.AddAsync(dbProduct);
+                    _logger.LogInformation($"Added new product: {dbProduct.Title} (API ID: {apiProductId})");
+                }
+
+                // Save changes to get database-generated ID (if new product)
+                await _dbContext.SaveChangesAsync();
+
+                // Synchronize product images
+                await SyncProductImagesAsync(
+                    dbProduct, 
+                    apiProduct.ImageUrls ?? new List<string>(), 
+                    apiProduct.Thumbnail ?? string.Empty);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error occurred while synchronizing product {apiProduct.Id} ({apiProduct.Title})");
+                // Continue processing the next product
             }
         }
 
         private async Task SyncProductImagesAsync(Product dbProduct, List<string> imageUrls, string thumbnail)
         {
-            // Skip if product has no image URLs
+            // Skip if product has no image URLs and no thumbnail
             if ((imageUrls == null || !imageUrls.Any()) && string.IsNullOrEmpty(thumbnail))
             {
                 return;
@@ -232,18 +247,15 @@ namespace UCSProductGallery.Services
             // Add image URLs from API
             if (imageUrls != null)
             {
-                foreach (var imageUrl in imageUrls)
+                foreach (var imageUrl in imageUrls.Where(url => !string.IsNullOrEmpty(url)))
                 {
-                    if (!string.IsNullOrEmpty(imageUrl))
+                    newImages.Add(new ProductImage
                     {
-                        newImages.Add(new ProductImage
-                        {
-                            ProductId = dbProduct.Id,
-                            ImageUrl = imageUrl,
-                            IsMain = isFirstImage // Set first image as main image
-                        });
-                        isFirstImage = false;
-                    }
+                        ProductId = dbProduct.Id,
+                        ImageUrl = imageUrl,
+                        IsMain = isFirstImage // Set first image as main image
+                    });
+                    isFirstImage = false;
                 }
             }
 

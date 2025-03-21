@@ -1,9 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 using UCSProductGallery.Data;
 using UCSProductGallery.Services;
-using System.Text.Json.Serialization;
-using Microsoft.Extensions.Logging;
-using System;
 
 var builder = WebApplication.CreateBuilder(args);
 
