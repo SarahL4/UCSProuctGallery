@@ -1,0 +1,30 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UCSProductGallery.Tests", "ProductGallery.Tests\UCSProductGallery.Tests.csproj", "{0CA950B0-5CBF-4C26-BF5B-3FB0A8A87F13}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UCSProductGallery", "ProductGallery\UCSProductGallery\UCSProductGallery.csproj", "{BBEAD8F7-308A-4CF1-B2FC-F4F665827869}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0CA950B0-5CBF-4C26-BF5B-3FB0A8A87F13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0CA950B0-5CBF-4C26-BF5B-3FB0A8A87F13}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0CA950B0-5CBF-4C26-BF5B-3FB0A8A87F13}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0CA950B0-5CBF-4C26-BF5B-3FB0A8A87F13}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BBEAD8F7-308A-4CF1-B2FC-F4F665827869}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BBEAD8F7-308A-4CF1-B2FC-F4F665827869}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BBEAD8F7-308A-4CF1-B2FC-F4F665827869}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BBEAD8F7-308A-4CF1-B2FC-F4F665827869}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {054A044D-4222-4AFA-83AE-B6257673AE15}
+	EndGlobalSection
+EndGlobal
