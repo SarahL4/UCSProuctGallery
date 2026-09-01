@@ -22,9 +22,9 @@ RUN dotnet publish ProductGallery/UCSProductGallery/UCSProductGallery.csproj \
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
 WORKDIR /app
 
-# Kestrel listens on 8080 by default in .NET 8/9 container images
-EXPOSE 8080
-ENV ASPNETCORE_HTTP_PORTS=8080 \
+# Azure App Service (multi-container) probes port 80 by default, so listen there
+EXPOSE 80
+ENV ASPNETCORE_HTTP_PORTS=80 \
     ASPNETCORE_ENVIRONMENT=Production
 
 COPY --from=build /app/publish .
