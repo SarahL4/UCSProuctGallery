@@ -50,13 +50,17 @@ stages:
 # =========================
 - stage: Deploy
   jobs:
-    - job: Deploy_to_development
-      steps:
+    - deployment: Deploy_to_development
+      environment: development
+      strategy:
+        runOnce:
+          deploy:
+            steps:
 
-        # 5. Deploy application to Azure Web App
-        - task: AzureWebApp@1
-          inputs:
-            appType: 'webApp'
-            appName: 'myapp'
-            package: '$(System.DefaultWorkingDirectory)/**/*.zip'
-            deploymentMethod: 'auto'
+              # 5. Deploy application to Azure Web App
+              - task: AzureWebApp@1
+                inputs:
+                  appType: 'webApp'
+                  appName: 'myapp'
+                  package: '$(System.DefaultWorkingDirectory)/**/*.zip'
+                  deploymentMethod: 'auto'
