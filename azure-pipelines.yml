@@ -1,10 +1,8 @@
 # ASP.NET Core (.NET Framework)
 # Build and test ASP.NET Core projects targeting the full .NET Framework.
-# Add steps that publish symbols, save build artifacts, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
 
 trigger:
-- main
+  - main
 
 pool:
   vmImage: 'windows-latest'
@@ -14,21 +12,51 @@ variables:
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
 
-steps:
-- task: NuGetToolInstaller@1
+stages:
 
-- task: NuGetCommand@2
-  inputs:
-    restoreSolution: '$(solution)'
+# =========================
+# Stage 1: Build & Test
+# =========================
+- stage: Build
+  jobs:
+    - job: Test_and_Build
+      steps:
 
-- task: VSBuild@1
-  inputs:
-    solution: '$(solution)'
-    msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:DesktopBuildPackageLocation="$(build.artifactStagingDirectory)\WebApp.zip" /p:DeployIisAppPath="Default Web Site"'
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
+        # 1. Run tests
+        - task: DotNetCoreCLI@2
+          inputs:
+            command: 'test'
 
-- task: VSTest@2
-  inputs:
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
+        # 2. Build the application
+        - task: DotNetCoreCLI@2
+          inputs:
+            command: 'build'
+            arguments: '--configuration $(buildConfiguration)'
+
+        # 3. Build again using dotnet CLI
+        - script: dotnet build --configuration $(buildConfiguration)
+          displayName: 'Build application'
+
+        # 4. Build Docker image and push it to registry
+        - task: Docker@2
+          inputs:
+            command: 'buildAndPush'
+            Dockerfile: '**/Dockerfile'
+          displayName: 'Push image'
+
+
+# =========================
+# Stage 2: Deploy
+# =========================
+- stage: Deploy
+  jobs:
+    - job: Deploy_to_development
+      steps:
+
+        # 5. Deploy application to Azure Web App
+        - task: AzureWebApp@1
+          inputs:
+            appType: 'webApp'
+            appName: 'myapp'
+            package: '$(System.DefaultWorkingDirectory)/**/*.zip'
+            deploymentMethod: 'auto'
