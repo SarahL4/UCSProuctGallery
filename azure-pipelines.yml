@@ -1,16 +1,8 @@
-# ASP.NET Core (.NET Framework)
-# Build and test ASP.NET Core projects targeting the full .NET Framework.
-
 trigger:
   - main
 
 pool:
-  vmImage: 'windows-latest'
-
-variables:
-  solution: '**/*.sln'
-  buildPlatform: 'Any CPU'
-  buildConfiguration: 'Release'
+  vmImage: 'ubuntu-latest'
 
 stages:
 
@@ -19,48 +11,27 @@ stages:
 # =========================
 - stage: Build
   jobs:
-    - job: Test_and_Build
+    - job: Build_Frontend
       steps:
 
-        # 1. Run tests
-        - task: DotNetCoreCLI@2
+        # 1. Install Node.js
+        - task: NodeTool@0
           inputs:
-            command: 'test'
+            versionSpec: '20.x'
 
-        # 2. Build the application
-        - task: DotNetCoreCLI@2
-          inputs:
-            command: 'build'
-            arguments: '--configuration $(buildConfiguration)'
+        # 2. Install dependencies
+        - script: npm ci
+          displayName: 'Install dependencies'
 
-        # 3. Build again using dotnet CLI
-        - script: dotnet build --configuration $(buildConfiguration)
+        # 3. Build Vite application
+        - script: npm run build
           displayName: 'Build application'
 
-        # 4. Build Docker image and push it to registry
+        # 4. Build Docker image
         - task: Docker@2
           inputs:
-            command: 'buildAndPush'
-            Dockerfile: '**/Dockerfile'
-          displayName: 'Push image'
-
-
-# =========================
-# Stage 2: Deploy
-# =========================
-- stage: Deploy
-  jobs:
-    - deployment: Deploy_to_development
-      environment: development
-      strategy:
-        runOnce:
-          deploy:
-            steps:
-
-              # 5. Deploy application to Azure Web App
-              - task: AzureWebApp@1
-                inputs:
-                  appType: 'webApp'
-                  appName: 'myapp'
-                  package: '$(System.DefaultWorkingDirectory)/**/*.zip'
-                  deploymentMethod: 'auto'
+            command: 'build'
+            Dockerfile: 'Dockerfile'
+            tags: |
+              game-hub:$(Build.BuildId)
+          displayName: 'Build Docker image'
