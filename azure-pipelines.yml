@@ -1,37 +1,98 @@
-trigger:
-  - main
+# ASP.NET Core (.NET 9) build, test, and Docker image pipeline for Azure DevOps
+# Docs: https://learn.microsoft.com/azure/devops/pipelines/languages/dotnet-core
 
-pool:
-  vmImage: 'ubuntu-latest'
+trigger:
+  branches:
+    include:
+      - main
+      - master
+
+pr:
+  branches:
+    include:
+      - main
+      - master
+
+variables:
+  # --- .NET build settings ---
+  buildConfiguration: 'Release'
+  dotnetSdkVersion: '9.0.x'
+  webProject: 'ProductGallery/UCSProductGallery/UCSProductGallery.csproj'
+  testProject: 'ProductGallery.Tests/UCSProductGallery.Tests.csproj'
+
+  # --- Docker settings ---
+  # Create a "Docker Registry" service connection in Azure DevOps
+  # (Project Settings > Service connections) and put its name here.
+  dockerRegistryServiceConnection: 'acr-connection'
+  imageRepository: 'ucsproductgallery'
+  dockerfilePath: '$(Build.SourcesDirectory)/Dockerfile'
+  tag: '$(Build.BuildId)'
 
 stages:
+  # =========================
+  # Stage 1: Build & Test (.NET)
+  # =========================
+  - stage: BuildAndTest
+    displayName: 'Build & Test'
+    jobs:
+      - job: BuildTest
+        displayName: 'Restore, Build, Test'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          # 1. Install the .NET 9 SDK on the build agent
+          - task: UseDotNet@2
+            displayName: 'Install .NET SDK'
+            inputs:
+              packageType: 'sdk'
+              version: '$(dotnetSdkVersion)'
 
-# =========================
-# Stage 1: Build & Test
-# =========================
-- stage: Build
-  jobs:
-    - job: Build_Frontend
-      steps:
+          # 2. Restore NuGet packages (C# dependencies)
+          - task: DotNetCoreCLI@2
+            displayName: 'Restore'
+            inputs:
+              command: 'restore'
+              projects: '**/*.csproj'
 
-        # 1. Install Node.js
-        - task: NodeTool@0
-          inputs:
-            versionSpec: '20.x'
+          # 3. Compile the web project
+          - task: DotNetCoreCLI@2
+            displayName: 'Build'
+            inputs:
+              command: 'build'
+              projects: '$(webProject)'
+              arguments: '--configuration $(buildConfiguration) --no-restore'
 
-        # 2. Install dependencies
-        - script: npm ci
-          displayName: 'Install dependencies'
+          # 4. Run unit tests
+          - task: DotNetCoreCLI@2
+            displayName: 'Test'
+            inputs:
+              command: 'test'
+              projects: '$(testProject)'
+              arguments: '--configuration $(buildConfiguration) --collect:"XPlat Code Coverage"'
+              publishTestResults: true
 
-        # 3. Build Vite application
-        - script: npm run build
-          displayName: 'Build application'
-
-        # 4. Build Docker image
-        - task: Docker@2
-          inputs:
-            command: 'build'
-            Dockerfile: 'Dockerfile'
-            tags: |
-              game-hub:$(Build.BuildId)
-          displayName: 'Build Docker image'
+  # =========================
+  # Stage 2: Docker Build & Push (only on main/master)
+  # =========================
+  - stage: DockerBuildAndPush
+    displayName: 'Docker Build & Push'
+    dependsOn: BuildAndTest
+    condition: and(succeeded(), in(variables['Build.SourceBranch'], 'refs/heads/main', 'refs/heads/master'))
+    jobs:
+      - job: Docker
+        displayName: 'Build and push image'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          # 5. Build the Docker image and push it to the container registry (ACR)
+          - task: Docker@2
+            displayName: 'Build and push an image to the container registry'
+            inputs:
+              command: 'buildAndPush'
+              repository: '$(imageRepository)'
+              dockerfile: '$(dockerfilePath)'
+              buildContext: '$(Build.SourcesDirectory)'
+              containerRegistry: '$(dockerRegistryServiceConnection)'
+              tags: |
+                $(tag)
+                latest

@@ -363,3 +363,5 @@ MigrationBackup/
 FodyWeavers.xsd
 azure-pipelines.yml
 .dockerignore
+note.md
+azure-pipelines.yml
