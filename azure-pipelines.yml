@@ -1,0 +1,37 @@
+trigger:
+  - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+
+# =========================
+# Stage 1: Build & Test
+# =========================
+- stage: Build
+  jobs:
+    - job: Build_Frontend
+      steps:
+
+        # 1. Install Node.js
+        - task: NodeTool@0
+          inputs:
+            versionSpec: '20.x'
+
+        # 2. Install dependencies
+        - script: npm ci
+          displayName: 'Install dependencies'
+
+        # 3. Build Vite application
+        - script: npm run build
+          displayName: 'Build application'
+
+        # 4. Build Docker image
+        - task: Docker@2
+          inputs:
+            command: 'build'
+            Dockerfile: 'Dockerfile'
+            tags: |
+              game-hub:$(Build.BuildId)
+          displayName: 'Build Docker image'
