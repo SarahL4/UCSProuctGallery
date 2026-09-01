@@ -15,7 +15,12 @@ builder.Services.AddControllersWithViews()
 // Register services
 builder.Services.AddHttpClient<ProductApiClient>();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        sqlOptions => sqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 10,
+            maxRetryDelay: TimeSpan.FromSeconds(30),
+            errorNumbersToAdd: null)));
 builder.Services.AddScoped<ProductSyncService>();
 builder.Services.AddTransient<IProductService, ProductApiClient>();
 
