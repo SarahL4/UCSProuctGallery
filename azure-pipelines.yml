@@ -28,6 +28,15 @@ variables:
   dockerfilePath: '$(Build.SourcesDirectory)/Dockerfile'
   tag: '$(Build.BuildId)'
 
+  # --- Deploy settings ---
+  # Create an "Azure Resource Manager" service connection and put its name here.
+  azureServiceConnection: 'azure-arm-connection'
+  # ACR login server + repository, e.g. ucsproductgallery.azurecr.io/ucsproductgallery
+  containerRegistry: 'ucsproductgallery.azurecr.io'
+  webAppName: 'ucsproductgallery-web'
+  # Azure DevOps Environment name (Pipelines > Environments)
+  deployEnvironment: 'development'
+
 stages:
   # =========================
   # Stage 1: Build & Test (.NET)
@@ -96,3 +105,29 @@ stages:
               tags: |
                 $(tag)
                 latest
+
+  # =========================
+  # Stage 3: Deploy to Azure Web App (only on main/master)
+  # =========================
+  - stage: Deploy
+    displayName: 'Deploy to Azure Web App'
+    dependsOn: DockerBuildAndPush
+    condition: and(succeeded(), in(variables['Build.SourceBranch'], 'refs/heads/main', 'refs/heads/master'))
+    jobs:
+      - deployment: DeployWebApp
+        displayName: 'Deploy container to Web App'
+        pool:
+          vmImage: 'ubuntu-latest'
+        # Ties this deployment to the Azure DevOps Environment (deployment history / approvals)
+        environment: '$(deployEnvironment)'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                # 6. Point the Web App at the freshly built image tag
+                - task: AzureWebAppContainer@1
+                  displayName: 'Deploy image to Azure Web App for Containers'
+                  inputs:
+                    azureSubscription: '$(azureServiceConnection)'
+                    appName: '$(webAppName)'
+                    containers: '$(containerRegistry)/$(imageRepository):$(tag)'
